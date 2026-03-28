@@ -289,6 +289,7 @@ function FeatureTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
 
 function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; editable: boolean; onChange: (v: RegionDetailConfig) => void }) {
   const cfg = draft.channelConfig;
+
   const [ruleModal, setRuleModal] = useState<{ open: boolean; unitId: string; keyword: string }>({ open: false, unitId: '', keyword: '' });
   const [mccModal, setMccModal] = useState<{ open: boolean; unitId: string; keyword: string; selected: string[] }>({ open: false, unitId: '', keyword: '', selected: [] });
   const [webhookModal, setWebhookModal] = useState<{ open: boolean; unitId: string }>({ open: false, unitId: '' });
@@ -299,20 +300,45 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
     onChange({ ...draft, channelConfig: { ...cfg, units: cfg.units.map((u) => (u.id === id ? updater(u) : u)) } });
   };
 
+  const canConfirm = !!cfg.channel && !!cfg.service;
+  const isConfirmedAdyenAfp = confirmedSelection?.channel === 'Adyen' && confirmedSelection?.service === 'AFP_ISO';
+
+
   return (
     <Space direction="vertical" style={{ width: '100%' }}>
       <Steps current={1} items={[{ title: 'Step 1：选择通道（渠道 + 服务）' }, { title: 'Step 2：配置参数' }]} />
       <Card size="small" title="Step 1：选择通道与服务">
 
         <Space wrap size="middle">
-
-          <Select disabled={!editable} style={{ width: 160 }} value={cfg.channel} options={channelOptions.map((o) => ({ value: o.channel, label: o.channel }))} onChange={(channel) => onChange({ ...draft, channelConfig: { ...cfg, channel, service: '' } })} />
-          <Select disabled={!editable} style={{ width: 180 }} value={cfg.service || undefined} options={(channelOptions.find((c) => c.channel === cfg.channel)?.services || []).map((s) => ({ value: s, label: s }))} onChange={(service) => onChange({ ...draft, channelConfig: { ...cfg, service } })} />
+          <Select
+            disabled={!editable}
+            style={{ width: 160 }}
+            value={cfg.channel || undefined}
+            placeholder="请选择渠道"
+            options={channelOptions.map((o) => ({ value: o.channel, label: o.channel }))}
+            onChange={(channel) => {
+              onChange({ ...draft, channelConfig: { ...cfg, channel, service: '' } });
+              setConfirmedSelection(null);
+            }}
+          />
+          <Select
+            disabled={!editable || !cfg.channel}
+            style={{ width: 180 }}
+            value={cfg.service || undefined}
+            placeholder="请选择服务"
+            options={(channelOptions.find((c) => c.channel === cfg.channel)?.services || []).map((s) => ({ value: s, label: s }))}
+            onChange={(service) => {
+              onChange({ ...draft, channelConfig: { ...cfg, service } });
+              setConfirmedSelection(null);
+            }}
+          />
+          <Button type="primary" disabled={!editable || !canConfirm} onClick={() => setConfirmedSelection({ channel: cfg.channel, service: cfg.service })}>
+            确认
+          </Button>
         </Space>
-        {cfg.channel !== 'Adyen' && <Typography.Text type="secondary">当前通道为占位演示，完整参数配置仅实现 Adyen-AFP。</Typography.Text>}
       </Card>
 
-      {cfg.channel === 'Adyen' && cfg.service === 'AFP_ISO' && (
+      {confirmedSelection && isConfirmedAdyenAfp && (
         <Card size="small" title="Step 2：Adyen-AFP 参数配置" extra={<Button disabled={!editable} icon={<PlusOutlined />} onClick={() => onChange({ ...draft, channelConfig: { ...cfg, units: [...cfg.units, { id: `u-${Date.now()}`, mccList: [], merchantAccountId: '', apiKey: '', balancePlatform: '', webhooks: [] }] } })}>新增运营单元</Button>}>
           {cfg.units.map((unit, idx) => (
             <Card key={unit.id} type="inner" title={`运营单元 #${idx + 1}`} style={{ marginBottom: 12 }}>
@@ -341,6 +367,14 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
           ))}
         </Card>
       )}
+
+
+      {confirmedSelection && !isConfirmedAdyenAfp && (
+        <Card size="small" title="Step 2：配置参数">
+          <Typography.Text type="secondary">当前通道为占位演示，完整参数配置仅实现 Adyen-AFP</Typography.Text>
+        </Card>
+      )}
+
 
       <Modal open={ruleModal.open} onCancel={() => setRuleModal({ ...ruleModal, open: false })} onOk={() => setRuleModal({ ...ruleModal, open: false })} title="选择行业代码映射规则" width={700}>
         <Input placeholder="按规则名称搜索" value={ruleModal.keyword} onChange={(e) => setRuleModal({ ...ruleModal, keyword: e.target.value })} />
