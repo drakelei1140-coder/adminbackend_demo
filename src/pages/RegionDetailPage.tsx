@@ -153,10 +153,8 @@ export default function RegionDetailPage() {
             </>
           )}
           {allow[activeTab] && !allow[activeTab].editable && <Tag>无编辑权限（mock）</Tag>}
-
           </Space>
         </div>
-
       </Card>
     </Space>
   );
@@ -217,7 +215,6 @@ function CurrencyTab({ draft, editable, onChange }: { draft: RegionDetailConfig;
 }
 
 function FlowTab({ draft, editable, onChange }: { draft: RegionDetailConfig; editable: boolean; onChange: (v: RegionDetailConfig) => void }) {
-
   const updateItem = (index: number, patch: Partial<RegionDetailConfig['businessFlows'][number]>) => {
     onChange({
       ...draft,
@@ -289,7 +286,7 @@ function FeatureTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
 
 function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; editable: boolean; onChange: (v: RegionDetailConfig) => void }) {
   const cfg = draft.channelConfig;
-
+  const [confirmedPair, setConfirmedPair] = useState<{ channel: string; service: string } | null>(null);
   const [ruleModal, setRuleModal] = useState<{ open: boolean; unitId: string; keyword: string }>({ open: false, unitId: '', keyword: '' });
   const [mccModal, setMccModal] = useState<{ open: boolean; unitId: string; keyword: string; selected: string[] }>({ open: false, unitId: '', keyword: '', selected: [] });
   const [webhookModal, setWebhookModal] = useState<{ open: boolean; unitId: string }>({ open: false, unitId: '' });
@@ -299,16 +296,13 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
   const patchUnit = (id: string, updater: (u: OperationUnit) => OperationUnit) => {
     onChange({ ...draft, channelConfig: { ...cfg, units: cfg.units.map((u) => (u.id === id ? updater(u) : u)) } });
   };
-
   const canConfirm = !!cfg.channel && !!cfg.service;
-  const isConfirmedAdyenAfp = confirmedSelection?.channel === 'Adyen' && confirmedSelection?.service === 'AFP_ISO';
-
+  const isConfirmedAdyenAfp = confirmedPair?.channel === 'Adyen' && confirmedPair?.service === 'AFP_ISO';
 
   return (
     <Space direction="vertical" style={{ width: '100%' }}>
       <Steps current={1} items={[{ title: 'Step 1：选择通道（渠道 + 服务）' }, { title: 'Step 2：配置参数' }]} />
       <Card size="small" title="Step 1：选择通道与服务">
-
         <Space wrap size="middle">
           <Select
             disabled={!editable}
@@ -318,7 +312,7 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
             options={channelOptions.map((o) => ({ value: o.channel, label: o.channel }))}
             onChange={(channel) => {
               onChange({ ...draft, channelConfig: { ...cfg, channel, service: '' } });
-              setConfirmedSelection(null);
+              setConfirmedPair(null);
             }}
           />
           <Select
@@ -329,27 +323,25 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
             options={(channelOptions.find((c) => c.channel === cfg.channel)?.services || []).map((s) => ({ value: s, label: s }))}
             onChange={(service) => {
               onChange({ ...draft, channelConfig: { ...cfg, service } });
-              setConfirmedSelection(null);
+              setConfirmedPair(null);
             }}
           />
-          <Button type="primary" disabled={!editable || !canConfirm} onClick={() => setConfirmedSelection({ channel: cfg.channel, service: cfg.service })}>
+          <Button type="primary" disabled={!editable || !canConfirm} onClick={() => setConfirmedPair({ channel: cfg.channel, service: cfg.service })}>
             确认
           </Button>
         </Space>
       </Card>
 
-      {confirmedSelection && isConfirmedAdyenAfp && (
+      {confirmedPair && isConfirmedAdyenAfp && (
         <Card size="small" title="Step 2：Adyen-AFP 参数配置" extra={<Button disabled={!editable} icon={<PlusOutlined />} onClick={() => onChange({ ...draft, channelConfig: { ...cfg, units: [...cfg.units, { id: `u-${Date.now()}`, mccList: [], merchantAccountId: '', apiKey: '', balancePlatform: '', webhooks: [] }] } })}>新增运营单元</Button>}>
           {cfg.units.map((unit, idx) => (
             <Card key={unit.id} type="inner" title={`运营单元 #${idx + 1}`} style={{ marginBottom: 12 }}>
-
               <Space direction="vertical" style={{ width: '100%' }} size={12}>
                 <Space size="middle" wrap>
                   <Button disabled={!editable} onClick={() => setRuleModal({ open: true, unitId: unit.id, keyword: '' })}>选择规则</Button>
                   <Typography.Text>{unit.rule ? `${unit.rule.id} - ${unit.rule.name}` : '未选择规则'}</Typography.Text>
                 </Space>
                 <Space size="middle" wrap>
-
                   <Button disabled={!editable} onClick={() => setMccModal({ open: true, unitId: unit.id, keyword: '', selected: unit.mccList.map((m) => m.code) })}>选择 MCC</Button>
                   <Typography.Text>{unit.mccList.map((m) => `${m.code}-${m.nameZh}`).join('；') || '未选择 MCC'}</Typography.Text>
                 </Space>
@@ -368,13 +360,11 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
         </Card>
       )}
 
-
-      {confirmedSelection && !isConfirmedAdyenAfp && (
+      {confirmedPair && !isConfirmedAdyenAfp && (
         <Card size="small" title="Step 2：配置参数">
           <Typography.Text type="secondary">当前通道为占位演示，完整参数配置仅实现 Adyen-AFP</Typography.Text>
         </Card>
       )}
-
 
       <Modal open={ruleModal.open} onCancel={() => setRuleModal({ ...ruleModal, open: false })} onOk={() => setRuleModal({ ...ruleModal, open: false })} title="选择行业代码映射规则" width={700}>
         <Input placeholder="按规则名称搜索" value={ruleModal.keyword} onChange={(e) => setRuleModal({ ...ruleModal, keyword: e.target.value })} />
