@@ -90,7 +90,9 @@ export interface RegionDetailConfig {
   permissions: Record<string, { visible: boolean; editable: boolean }>;
   languages: LanguageItem[];
   currencies: CurrencyItem[];
-  businessFlow: BusinessFlowConfig;
+
+  businessFlows: BusinessFlowConfig[];
+
   features: string[];
   channelConfig: ChannelConfig;
 }

@@ -1,5 +1,7 @@
 import { DownOutlined, MoreOutlined } from '@ant-design/icons';
-import { App, Button, Card, Dropdown, Form, Input, Select, Space, Switch, Table, Tag, Typography } from 'antd';
+
+import { App, Button, Card, Dropdown, Form, Input, Select, Space, Table, Tag, Typography } from 'antd';
+
 import type { ColumnsType } from 'antd/es/table';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -58,35 +60,34 @@ export default function RegionListPage() {
         title: '是否开展业务',
         dataIndex: 'businessEnabled',
         width: 140,
-        render: (_, record) => (
-          <Switch
-            checked={record.businessEnabled}
-            onClick={(checked, e) => {
-              e?.stopPropagation();
-              toggleStatus(record, checked);
-            }}
-          />
-        )
+
+        render: (_, record) => (record.businessEnabled ? 'Y' : 'N')
+
       },
       { title: '最近更新时间', dataIndex: 'updatedAt', width: 180 },
       {
         title: '操作',
         width: 70,
         render: (_, record) => (
-          <Dropdown
-            menu={{
-              items: [
-                { key: 'detail', label: '详情', onClick: () => navigate(`/regions/${record.id}`) },
-                {
-                  key: 'toggle',
-                  label: record.businessEnabled ? '停止业务' : '展开业务',
-                  onClick: () => toggleStatus(record, !record.businessEnabled)
+
+          <div onClick={(e) => e.stopPropagation()}>
+            <Dropdown
+              menu={{
+                items: [
+                  { key: 'detail', label: '详情' },
+                  { key: 'toggle', label: record.businessEnabled ? '停止业务' : '展开业务' }
+                ],
+                onClick: ({ key, domEvent }) => {
+                  domEvent.stopPropagation();
+                  if (key === 'detail') navigate(`/regions/${record.id}`);
+                  if (key === 'toggle') toggleStatus(record, !record.businessEnabled);
                 }
-              ]
-            }}
-          >
-            <Button type="text" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
-          </Dropdown>
+              }}
+            >
+              <Button type="text" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
+            </Dropdown>
+          </div>
+
         )
       }
     ],

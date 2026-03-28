@@ -137,7 +137,10 @@ export default function RegionDetailPage() {
           }
         ]} />
 
-        <Space>
+
+        <div className="action-bar">
+          <Space size="middle" wrap>
+
           {allow[activeTab]?.visible !== false && (
             <Button type="primary" disabled={!allow[activeTab]?.editable || editingTab === activeTab} onClick={() => startEdit(activeTab)}>
               编辑
@@ -150,7 +153,10 @@ export default function RegionDetailPage() {
             </>
           )}
           {allow[activeTab] && !allow[activeTab].editable && <Tag>无编辑权限（mock）</Tag>}
-        </Space>
+
+          </Space>
+        </div>
+
       </Card>
     </Space>
   );
@@ -211,27 +217,69 @@ function CurrencyTab({ draft, editable, onChange }: { draft: RegionDetailConfig;
 }
 
 function FlowTab({ draft, editable, onChange }: { draft: RegionDetailConfig; editable: boolean; onChange: (v: RegionDetailConfig) => void }) {
-  const currentProcessOptions = processOptions[draft.businessFlow.businessId] || [];
+
+  const updateItem = (index: number, patch: Partial<RegionDetailConfig['businessFlows'][number]>) => {
+    onChange({
+      ...draft,
+      businessFlows: draft.businessFlows.map((item, i) => (i === index ? { ...item, ...patch } : item))
+    });
+  };
+
+  const removeItem = (index: number) => {
+    onChange({
+      ...draft,
+      businessFlows: draft.businessFlows.filter((_, i) => i !== index)
+    });
+  };
+
+  const addItem = () => {
+    onChange({
+      ...draft,
+      businessFlows: [...draft.businessFlows, { businessId: '', processId: '' }]
+    });
+  };
+
+  const selectedBusinessIds = new Set(draft.businessFlows.map((item) => item.businessId).filter(Boolean));
+
   return (
-    <Form layout="vertical">
-      <Form.Item label="选择业务">
-        <Select
-          disabled={!editable}
-          value={draft.businessFlow.businessId}
-          options={businessOptions.map((b) => ({ value: b.id, label: b.name }))}
-          onChange={(businessId) => onChange({ ...draft, businessFlow: { businessId, processId: '' } })}
-        />
-      </Form.Item>
-      <Form.Item label="选择业务流程">
-        <Select
-          disabled={!editable || !draft.businessFlow.businessId}
-          value={draft.businessFlow.processId || undefined}
-          options={currentProcessOptions.map((p) => ({ value: p.id, label: p.name }))}
-          onChange={(processId) => onChange({ ...draft, businessFlow: { ...draft.businessFlow, processId } })}
-          placeholder="请先选择业务"
-        />
-      </Form.Item>
-    </Form>
+    <Space direction="vertical" style={{ width: '100%' }} size={16}>
+      <div className="section-actions">
+        <Button type="dashed" icon={<PlusOutlined />} onClick={addItem} disabled={!editable}>添加业务</Button>
+      </div>
+      {draft.businessFlows.length === 0 && <Typography.Text type="secondary">暂无业务配置，请点击“添加业务”。</Typography.Text>}
+      {draft.businessFlows.map((item, index) => {
+        const currentProcessOptions = processOptions[item.businessId] || [];
+        return (
+          <Card key={`${item.businessId || 'empty'}-${index}`} size="small" type="inner" title={`业务配置 #${index + 1}`} extra={<Button danger type="link" disabled={!editable} onClick={() => removeItem(index)}>删除</Button>}>
+            <Form layout="vertical">
+              <Form.Item label="选择业务" required>
+                <Select
+                  disabled={!editable}
+                  value={item.businessId || undefined}
+                  options={businessOptions.map((b) => ({
+                    value: b.id,
+                    label: b.name,
+                    disabled: selectedBusinessIds.has(b.id) && item.businessId !== b.id
+                  }))}
+                  onChange={(businessId) => updateItem(index, { businessId, processId: '' })}
+                  placeholder="请选择业务"
+                />
+              </Form.Item>
+              <Form.Item label="选择业务流程" required>
+                <Select
+                  disabled={!editable || !item.businessId}
+                  value={item.processId || undefined}
+                  options={currentProcessOptions.map((p) => ({ value: p.id, label: p.name }))}
+                  onChange={(processId) => updateItem(index, { processId })}
+                  placeholder="请先选择业务"
+                />
+              </Form.Item>
+            </Form>
+          </Card>
+        );
+      })}
+    </Space>
+
   );
 }
 
@@ -255,7 +303,9 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
     <Space direction="vertical" style={{ width: '100%' }}>
       <Steps current={1} items={[{ title: 'Step 1：选择通道（渠道 + 服务）' }, { title: 'Step 2：配置参数' }]} />
       <Card size="small" title="Step 1：选择通道与服务">
-        <Space wrap>
+
+        <Space wrap size="middle">
+
           <Select disabled={!editable} style={{ width: 160 }} value={cfg.channel} options={channelOptions.map((o) => ({ value: o.channel, label: o.channel }))} onChange={(channel) => onChange({ ...draft, channelConfig: { ...cfg, channel, service: '' } })} />
           <Select disabled={!editable} style={{ width: 180 }} value={cfg.service || undefined} options={(channelOptions.find((c) => c.channel === cfg.channel)?.services || []).map((s) => ({ value: s, label: s }))} onChange={(service) => onChange({ ...draft, channelConfig: { ...cfg, service } })} />
         </Space>
@@ -266,12 +316,14 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
         <Card size="small" title="Step 2：Adyen-AFP 参数配置" extra={<Button disabled={!editable} icon={<PlusOutlined />} onClick={() => onChange({ ...draft, channelConfig: { ...cfg, units: [...cfg.units, { id: `u-${Date.now()}`, mccList: [], merchantAccountId: '', apiKey: '', balancePlatform: '', webhooks: [] }] } })}>新增运营单元</Button>}>
           {cfg.units.map((unit, idx) => (
             <Card key={unit.id} type="inner" title={`运营单元 #${idx + 1}`} style={{ marginBottom: 12 }}>
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Space>
+
+              <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                <Space size="middle" wrap>
                   <Button disabled={!editable} onClick={() => setRuleModal({ open: true, unitId: unit.id, keyword: '' })}>选择规则</Button>
                   <Typography.Text>{unit.rule ? `${unit.rule.id} - ${unit.rule.name}` : '未选择规则'}</Typography.Text>
                 </Space>
-                <Space>
+                <Space size="middle" wrap>
+
                   <Button disabled={!editable} onClick={() => setMccModal({ open: true, unitId: unit.id, keyword: '', selected: unit.mccList.map((m) => m.code) })}>选择 MCC</Button>
                   <Typography.Text>{unit.mccList.map((m) => `${m.code}-${m.nameZh}`).join('；') || '未选择 MCC'}</Typography.Text>
                 </Space>
