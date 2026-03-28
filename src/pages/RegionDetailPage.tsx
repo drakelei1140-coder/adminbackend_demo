@@ -137,8 +137,10 @@ export default function RegionDetailPage() {
           }
         ]} />
 
+
         <div className="action-bar">
           <Space size="middle" wrap>
+
           {allow[activeTab]?.visible !== false && (
             <Button type="primary" disabled={!allow[activeTab]?.editable || editingTab === activeTab} onClick={() => startEdit(activeTab)}>
               编辑
@@ -274,6 +276,7 @@ function FlowTab({ draft, editable, onChange }: { draft: RegionDetailConfig; edi
         );
       })}
     </Space>
+
   );
 }
 
