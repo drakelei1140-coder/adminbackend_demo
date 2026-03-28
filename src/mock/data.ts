@@ -81,7 +81,9 @@ export const detailSeed: RegionDetailConfig[] = regionsSeed.map((r, idx) => ({
   },
   languages: baseLangs.map((l, i) => ({ ...l, isDefault: i === 0, isPrimary: i === 0 })),
   currencies: baseCurrencies.map((c, i) => ({ ...c, isDefault: i === 0, isPrimary: i === 0 })),
+
   businessFlows: [],
+
   features: ['dashboard', 'orders', 'orders.create', 'risk', 'config.region'],
   channelConfig: {
     channel: 'Adyen',
