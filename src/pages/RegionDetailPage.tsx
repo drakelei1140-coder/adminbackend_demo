@@ -137,8 +137,10 @@ export default function RegionDetailPage() {
           }
         ]} />
 
+
         <div className="action-bar">
           <Space size="middle" wrap>
+
           {allow[activeTab]?.visible !== false && (
             <Button type="primary" disabled={!allow[activeTab]?.editable || editingTab === activeTab} onClick={() => startEdit(activeTab)}>
               编辑
@@ -151,8 +153,10 @@ export default function RegionDetailPage() {
             </>
           )}
           {allow[activeTab] && !allow[activeTab].editable && <Tag>无编辑权限（mock）</Tag>}
+
           </Space>
         </div>
+
       </Card>
     </Space>
   );
@@ -213,6 +217,7 @@ function CurrencyTab({ draft, editable, onChange }: { draft: RegionDetailConfig;
 }
 
 function FlowTab({ draft, editable, onChange }: { draft: RegionDetailConfig; editable: boolean; onChange: (v: RegionDetailConfig) => void }) {
+
   const updateItem = (index: number, patch: Partial<RegionDetailConfig['businessFlows'][number]>) => {
     onChange({
       ...draft,
@@ -274,6 +279,7 @@ function FlowTab({ draft, editable, onChange }: { draft: RegionDetailConfig; edi
         );
       })}
     </Space>
+
   );
 }
 
@@ -297,7 +303,9 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
     <Space direction="vertical" style={{ width: '100%' }}>
       <Steps current={1} items={[{ title: 'Step 1：选择通道（渠道 + 服务）' }, { title: 'Step 2：配置参数' }]} />
       <Card size="small" title="Step 1：选择通道与服务">
+
         <Space wrap size="middle">
+
           <Select disabled={!editable} style={{ width: 160 }} value={cfg.channel} options={channelOptions.map((o) => ({ value: o.channel, label: o.channel }))} onChange={(channel) => onChange({ ...draft, channelConfig: { ...cfg, channel, service: '' } })} />
           <Select disabled={!editable} style={{ width: 180 }} value={cfg.service || undefined} options={(channelOptions.find((c) => c.channel === cfg.channel)?.services || []).map((s) => ({ value: s, label: s }))} onChange={(service) => onChange({ ...draft, channelConfig: { ...cfg, service } })} />
         </Space>
@@ -308,12 +316,14 @@ function ChannelTab({ draft, editable, onChange }: { draft: RegionDetailConfig; 
         <Card size="small" title="Step 2：Adyen-AFP 参数配置" extra={<Button disabled={!editable} icon={<PlusOutlined />} onClick={() => onChange({ ...draft, channelConfig: { ...cfg, units: [...cfg.units, { id: `u-${Date.now()}`, mccList: [], merchantAccountId: '', apiKey: '', balancePlatform: '', webhooks: [] }] } })}>新增运营单元</Button>}>
           {cfg.units.map((unit, idx) => (
             <Card key={unit.id} type="inner" title={`运营单元 #${idx + 1}`} style={{ marginBottom: 12 }}>
+
               <Space direction="vertical" style={{ width: '100%' }} size={12}>
                 <Space size="middle" wrap>
                   <Button disabled={!editable} onClick={() => setRuleModal({ open: true, unitId: unit.id, keyword: '' })}>选择规则</Button>
                   <Typography.Text>{unit.rule ? `${unit.rule.id} - ${unit.rule.name}` : '未选择规则'}</Typography.Text>
                 </Space>
                 <Space size="middle" wrap>
+
                   <Button disabled={!editable} onClick={() => setMccModal({ open: true, unitId: unit.id, keyword: '', selected: unit.mccList.map((m) => m.code) })}>选择 MCC</Button>
                   <Typography.Text>{unit.mccList.map((m) => `${m.code}-${m.nameZh}`).join('；') || '未选择 MCC'}</Typography.Text>
                 </Space>
